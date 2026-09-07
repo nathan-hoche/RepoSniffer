@@ -1,0 +1,16 @@
+:root {
+  --sl-color-accent-high: hsl(264 75% 62%);
+  --sl-color-accent: hsl(264 75% 55%);
+  --sl-color-accent-low: hsl(264 75% 22%);
+}
+
+[data-theme="light"] {
+  --sl-color-accent-high: hsl(264 75% 38%);
+  --sl-color-accent: hsl(264 75% 45%);
+  --sl-color-accent-low: hsl(264 75% 88%);
+}
+
+.site-title {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
