@@ -1,0 +1,63 @@
+[project]
+name = "reposniffer"
+version = "0.1.0"
+description = "AI-first GitHub repo discovery: describe a feature, get the best open-source project — for agents (MCP) and humans (CLI)."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Nathan Hoche" }]
+keywords = ["github", "mcp", "agent", "search", "embeddings", "semantic-search"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "mcp>=1.2.0",
+    "httpx>=0.27.0",
+    "numpy>=1.26.0",
+    "fastembed>=0.4.0",
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+reposniffer = "reposniffer.cli:app"
+reposniffer-mcp = "reposniffer.mcp.server:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.24", "ruff>=0.6", "pyright>=1.1.380"]
+
+[dependency-groups]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.24", "ruff>=0.6", "pyright>=1.1.380"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/reposniffer"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+ignore = ["B008", "E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pyright]
+pythonVersion = "3.12"
+include = ["src"]
+reportMissingImports = true
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
