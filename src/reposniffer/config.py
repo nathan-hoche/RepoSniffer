@@ -22,7 +22,7 @@ class Settings:
     )
     embed_model: str = field(
         default_factory=lambda: (
-            _env("REPOSNIFFER_EMBED_MODEL", "BAAI/bge-small-en-v1.5") or "BAAI/bge-small-en-v1.5"
+            _env("REPOSNIFFER_EMBED_MODEL", "BAAI/bge-base-en-v1.5") or "BAAI/bge-base-en-v1.5"
         )
     )
     embed_api_base: str = field(
@@ -39,7 +39,7 @@ class Settings:
         )
     )
     embed_dimension: int = field(
-        default_factory=lambda: int(_env("REPOSNIFFER_EMBED_DIMENSION", "384") or "384")
+        default_factory=lambda: int(_env("REPOSNIFFER_EMBED_DIMENSION", "768") or "768")
     )
     request_timeout: float = field(
         default_factory=lambda: float(_env("REPOSNIFFER_TIMEOUT", "20") or "20")
