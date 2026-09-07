@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import threading
 import traceback
 from typing import Any
@@ -21,7 +22,12 @@ def _engine() -> Any:
     if _engine_singleton is None:
         with _engine_lock:
             if _engine_singleton is None:
-                _engine_singleton = build_engine(Settings())
+                if os.environ.get("REPOSNIFFER_FAKE_ENGINE") == "1":
+                    from reposniffer.testing import build_test_engine
+
+                    _engine_singleton = build_test_engine()
+                else:
+                    _engine_singleton = build_engine(Settings())
     return _engine_singleton
 
 
