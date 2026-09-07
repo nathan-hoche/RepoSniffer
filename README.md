@@ -130,6 +130,17 @@ tags via trusted publishing — enable it once on the PyPI project settings, the
 
 Note: mcp 2.x is used — `MCPServer` (FastMCP was renamed in mcp 2.0). Pin `mcp<2` if you need the v1 API.
 
+## Contributing
+
+We welcome contributions — bugs, features, docs, and eval cases. Please read
+[CONTRIBUTING.md](CONTRIBUTING.md) first; it covers the dev setup, coding
+standards, tests, the eval harness, and the PR workflow.
+
+- **Found a bug?** Open an issue with the exact query and output.
+- **Have a feature idea?** Discuss it in an issue before writing code.
+- **Reporting a vulnerability?** See [SECURITY.md](SECURITY.md) — don't post it publicly.
+- This project follows a [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## License
 
 MIT

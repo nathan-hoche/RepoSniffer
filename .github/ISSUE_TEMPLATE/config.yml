@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/nathan-hoche/RepoSniffer/discussions
+    about: Ask questions, show off usage, and discuss ideas with the community.
+  - name: Contributing guide
+    url: https://github.com/nathan-hoche/RepoSniffer/blob/main/CONTRIBUTING.md
+    about: Read the rules and workflow before opening a pull request.

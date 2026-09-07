@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest a feature or improvement for RepoSniffer
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! A short, focused feature request is the fastest
+        path to it being built. If your idea is about *retrieval quality*,
+        the [eval harness](https://github.com/nathan-hoche/RepoSniffer/blob/main/CONTRIBUTING.md#the-eval-harness)
+        is often the better lever than a new flag.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you solving?
+      description: The user story — who benefits, and how?
+      placeholder: |
+        When I ask the agent for "a websocket rate limiter", I want the top
+        result to already be the best library instead of me reading 5 READMEs.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed solution
+      description: What should change? Which surface (engine, CLI, MCP tool)?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Anything you tried instead (workarounds, other tools)?
+  - type: checkboxes
+    id: willingness
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd be willing to implement this and open a PR
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Examples, screenshots, links — anything that clarifies the ask.
