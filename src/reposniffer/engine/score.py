@@ -4,7 +4,68 @@ import math
 import time
 from typing import Any, Literal
 
+from reposniffer.engine.github import tokenize
+
 Intent = Literal["adopt", "study"]
+
+LICENSE_CATEGORIES: dict[str, str] = {
+    "MIT": "permissive",
+    "Apache-2.0": "permissive",
+    "BSD-2-Clause": "permissive",
+    "BSD-3-Clause": "permissive",
+    "ISC": "permissive",
+    "0BSD": "permissive",
+    "Unlicense": "permissive",
+    "WTFPL": "permissive",
+    "Python-2.0": "permissive",
+    "MPL-2.0": "weak-copyleft",
+    "LGPL-2.1": "weak-copyleft",
+    "LGPL-3.0": "weak-copyleft",
+    "EPL-1.0": "weak-copyleft",
+    "EPL-2.0": "weak-copyleft",
+    "GPL-2.0": "strong-copyleft",
+    "GPL-3.0": "strong-copyleft",
+    "AGPL-3.0": "strong-copyleft",
+}
+
+
+def license_info(spdx: str | None) -> dict[str, Any]:
+    if not spdx or spdx in {"NOASSERTION", "Other", "SEE LICENSE IN LICENSE"}:
+        return {
+            "category": "unknown",
+            "dependency_safe": False,
+            "note": "no recognized license — verify before depending",
+        }
+    category = LICENSE_CATEGORIES.get(spdx, "unknown")
+    if category == "permissive":
+        return {"category": category, "dependency_safe": True, "note": f"{spdx}: safe to depend on"}
+    if category == "weak-copyleft":
+        return {
+            "category": category,
+            "dependency_safe": False,
+            "note": f"{spdx}: weak copyleft — usually OK for linking, review terms",
+        }
+    if category == "strong-copyleft":
+        return {
+            "category": category,
+            "dependency_safe": False,
+            "note": f"{spdx}: strong copyleft — may force license on your derivative work",
+        }
+    return {
+        "category": category,
+        "dependency_safe": False,
+        "note": f"{spdx}: verify the license terms",
+    }
+
+
+def lexical_overlap(query: str, text: str) -> float:
+    query_tokens = set(tokenize(query))
+    if not query_tokens:
+        return 0.0
+    text_tokens = set(tokenize(text))
+    if not text_tokens:
+        return 0.0
+    return len(query_tokens & text_tokens) / len(query_tokens)
 
 
 def _days_since(iso_timestamp: str) -> float:

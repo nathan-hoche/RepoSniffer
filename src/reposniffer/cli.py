@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+from typing import NoReturn
 
 import typer
 from rich.console import Console
 from rich.table import Table
 
 from reposniffer.config import Settings
+from reposniffer.engine.github import GitHubError, RateLimitError
 from reposniffer.engine.search import build_engine
 
 app = typer.Typer(
@@ -14,6 +16,17 @@ app = typer.Typer(
     help="RepoSniffer: find the best open-source project for a described feature.",
 )
 console = Console()
+
+
+def _handle_error(exc: GitHubError) -> NoReturn:
+    if isinstance(exc, RateLimitError):
+        hint = (
+            "set GITHUB_TOKEN to raise the limit" if not Settings().github_token else "retry later"
+        )
+        console.print(f"[red]GitHub rate limit hit — {hint}.[/red]")
+    else:
+        console.print(f"[red]{exc}[/red]")
+    raise typer.Exit(code=1)
 
 
 @app.command()
@@ -36,6 +49,8 @@ def search(
             intent=intent,  # type: ignore[arg-type]
             top_k=top_k,
         )
+    except GitHubError as exc:
+        _handle_error(exc)
     finally:
         engine.close()
     if json_out:
@@ -68,6 +83,8 @@ def intel(
     engine = build_engine(Settings())
     try:
         result = engine.repo_intel(owner_repo=owner_repo, query=query, top_k=top_k)
+    except GitHubError as exc:
+        _handle_error(exc)
     finally:
         engine.close()
     if json_out:

@@ -45,9 +45,14 @@ class HealthParams(BaseModel):
 
 mcp = MCPServer("reposniffer")
 
+_engine_singleton: Any | None = None
+
 
 def _engine() -> Any:
-    return build_engine(Settings())
+    global _engine_singleton
+    if _engine_singleton is None:
+        _engine_singleton = build_engine(Settings())
+    return _engine_singleton
 
 
 @mcp.tool()
@@ -69,10 +74,13 @@ def find_repos(params: FindReposParams) -> dict[str, Any]:
         top_k=params.top_k,
         include_archived=params.include_archived,
     )
+    as_of = results[0]["as_of"] if results else None
+    engine = _engine()
     return {
         "query": params.query,
         "intent": params.intent,
-        "embedding_model": _engine().model_name,
+        "as_of": as_of,
+        "embedding_model": engine.model_name,
         "results": results,
     }
 

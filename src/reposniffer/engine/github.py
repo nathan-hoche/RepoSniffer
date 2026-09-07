@@ -66,6 +66,11 @@ class GitHub:
         )
         if resp.status_code == 404:
             return None
+        if resp.status_code == 403 and resp.headers.get("x-ratelimit-remaining") == "0":
+            reset = int(resp.headers.get("x-ratelimit-reset", "0") or 0)
+            raise RateLimitError(
+                "GitHub API rate limit reached; set GITHUB_TOKEN or retry later", reset
+            )
         if resp.status_code >= 400:
             raise GitHubError(f"GitHub API {resp.status_code} fetching README for {owner_repo}")
         return resp.text
@@ -110,6 +115,98 @@ def strip_markdown(text: str) -> str:
 def excerpt(readme: str, limit: int = 500) -> str:
     clean = strip_markdown(readme)
     return clean[:limit]
+
+
+STOPWORDS = {
+    "the",
+    "and",
+    "for",
+    "with",
+    "from",
+    "that",
+    "this",
+    "your",
+    "you",
+    "are",
+    "has",
+    "have",
+    "was",
+    "were",
+    "will",
+    "can",
+    "not",
+    "but",
+    "its",
+    "it's",
+    "into",
+    "over",
+    "under",
+    "than",
+    "then",
+    "them",
+    "they",
+    "their",
+    "which",
+    "who",
+    "what",
+    "when",
+    "where",
+    "how",
+    "all",
+    "any",
+    "some",
+    "also",
+    "very",
+    "just",
+    "more",
+    "most",
+    "such",
+    "only",
+    "own",
+    "same",
+    "too",
+}
+
+
+def tokenize(text: str) -> list[str]:
+    words = re.findall(r"[a-z0-9]+", text.lower())
+    return [w for w in words if w not in STOPWORDS and len(w) >= 2]
+
+
+def front_matter(text: str, limit: int = 1000) -> str:
+    return strip_markdown(text)[:limit]
+
+
+def text_for_embedding(description: str | None, readme: str | None, limit: int = 1000) -> str:
+    parts: list[str] = []
+    if description:
+        parts.append(description.strip())
+    if readme:
+        parts.append(front_matter(readme, limit))
+    return "\n".join(p for p in parts if p)
+
+
+def best_snippet(readme: str, query: str, limit: int = 500) -> str:
+    clean = strip_markdown(readme)
+    if not clean:
+        return ""
+    q = set(tokenize(query))
+    if not q:
+        return clean[:limit]
+    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+|\n+", clean) if s.strip()]
+    if not sentences:
+        return clean[:limit]
+    scored = sorted(
+        ((sum(1 for t in tokenize(s) if t in q), s) for s in sentences),
+        key=lambda pair: pair[0],
+        reverse=True,
+    )
+    best_score, best = scored[0]
+    if best_score == 0:
+        return clean[:limit]
+    idx = clean.find(best)
+    start = max(0, idx - limit // 2)
+    return clean[start : start + limit].strip()
 
 
 def query_cache_key(

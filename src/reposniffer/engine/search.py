@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
@@ -9,11 +11,23 @@ from reposniffer.config import Settings
 from reposniffer.engine.embed import Embedder, l2_normalize
 from reposniffer.engine.github import (
     GitHub,
+    best_snippet,
     build_search_query,
-    excerpt,
     query_cache_key,
+    text_for_embedding,
 )
-from reposniffer.engine.score import Intent, combine_score, intent_weights, quality_score
+from reposniffer.engine.score import (
+    Intent,
+    combine_score,
+    intent_weights,
+    lexical_overlap,
+    license_info,
+    quality_score,
+)
+
+
+def _now_iso() -> str:
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 def build_engine(
@@ -92,10 +106,9 @@ class Engine:
             self._store.put_query(key, candidates)
 
         metas = self._finalize_metas(candidates)
-        texts: list[str] = []
+        embed_texts: list[str] = []
         for meta in metas:
-            readme = meta.get("readme")
-            texts.append(readme if readme else str(meta.get("description") or ""))
+            embed_texts.append(text_for_embedding(meta.get("description"), meta.get("readme")))
 
         vectors: dict[str, np.ndarray] = {}
         missing: list[tuple[str, int]] = []
@@ -106,20 +119,23 @@ class Engine:
             else:
                 vectors[meta["full_name"]] = emb
         if missing:
-            batch_texts = [texts[idx] for _, idx in missing]
+            batch_texts = [embed_texts[idx] for _, idx in missing]
             batch = l2_normalize(self._embedder.embed(batch_texts))
             for (name, _), vec in zip(missing, batch, strict=True):
                 self._store.put_embedding(name, self.model_name, vec)
                 vectors[name] = vec
 
         results: list[dict[str, Any]] = []
-        for meta in metas:
+        for i, meta in enumerate(metas):
             vec = vectors.get(meta["full_name"])
             semantic = float(np.dot(query_vec, vec)) if vec is not None and np.any(vec) else 0.0
             quality = quality_score(meta)
-            overall = combine_score(semantic, quality["quality"], intent)
-            readme = meta.get("readme")
-            results.append(self._render(meta, semantic, quality, overall, readme, intent))
+            lexical = lexical_overlap(query, embed_texts[i])
+            relevance = 0.8 * semantic + 0.2 * lexical
+            overall = combine_score(relevance, quality["quality"], intent)
+            results.append(
+                self._render(meta, semantic, lexical, relevance, quality, overall, query, intent)
+            )
 
         results.sort(key=lambda r: r["overall"], reverse=True)
         for rank, result in enumerate(results, start=1):
@@ -136,11 +152,13 @@ class Engine:
         query_text = query or str(meta.get("description") or meta.get("full_name"))
         query_vec = self._embedder.embed([query_text])[0]
         readme = meta.get("readme")
-        text = readme if readme else str(meta.get("description") or "")
+        text = text_for_embedding(meta.get("description"), readme)
         vec = self._embedder.embed([text])[0]
         semantic = float(np.dot(query_vec, vec)) if np.any(vec) else 0.0
+        lexical = lexical_overlap(query_text, text)
+        relevance = 0.8 * semantic + 0.2 * lexical
         quality = quality_score(meta)
-        overall = combine_score(semantic, quality["quality"], "adopt")
+        overall = combine_score(relevance, quality["quality"], "adopt")
 
         alternatives = [
             r
@@ -153,14 +171,30 @@ class Engine:
             if r["full_name"] != owner_repo
         ][:top_k]
 
-        status = "avoid: archived"
-        if not meta.get("archived"):
-            if quality["activity"] >= 0.5 and quality["license"]:
-                status = "healthy and licensed"
-            elif quality["activity"] >= 0.5:
-                status = "healthy, missing license"
-            else:
-                status = "stale (low recent activity)"
+        lic = (
+            (meta.get("license") or {}).get("spdx_id")
+            if isinstance(meta.get("license"), dict)
+            else None
+        )
+        lic_info = license_info(lic)
+        flags: list[str] = []
+        if meta.get("archived"):
+            flags.append("archived")
+        if not lic:
+            flags.append("no-license")
+        if quality["activity"] < 0.3:
+            flags.append("stale")
+
+        if meta.get("archived"):
+            status = "avoid: archived"
+        elif not lic:
+            status = "alive but missing license — verify terms before depending"
+        elif quality["activity"] >= 0.5 and lic_info["category"] == "permissive":
+            status = "healthy and licensed"
+        elif quality["activity"] >= 0.5:
+            status = f"healthy but {lic_info['category']} — review license terms"
+        else:
+            status = "stale (low recent activity)"
 
         return {
             "full_name": owner_repo,
@@ -169,39 +203,51 @@ class Engine:
             "stars": meta.get("stargazers_count"),
             "forks": meta.get("forks_count"),
             "language": meta.get("language"),
-            "license": (meta.get("license") or {}).get("spdx_id")
-            if isinstance(meta.get("license"), dict)
-            else None,
+            "license": lic,
+            "license_category": lic_info["category"],
+            "license_note": lic_info["note"],
             "archived": meta.get("archived"),
             "pushed_at": meta.get("pushed_at"),
             "has_readme": bool(readme),
+            "as_of": _now_iso(),
+            "flags": flags,
             "status": status,
             "semantic": round(semantic, 3),
+            "lexical": round(lexical, 3),
+            "relevance": round(relevance, 3),
             "quality": quality,
             "overall": round(overall, 3),
+            "snippet": best_snippet(readme, query_text) if readme else "",
             "alternatives": alternatives,
         }
 
     def _finalize_metas(self, candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
         metas: list[dict[str, Any]] = []
+        to_fetch: list[dict[str, Any]] = []
         for meta in candidates:
             cached = self._store.get_repo(meta["full_name"], self._settings.repo_cache_ttl_hours)
             if cached is not None:
                 metas.append(cached)
-                continue
-            readme = self._github.readme(meta["full_name"])
-            merged = {**meta, **{"readme": readme}}
-            self._store.put_repo(merged, readme)
-            metas.append(merged)
+            else:
+                to_fetch.append(meta)
+        if to_fetch:
+            with ThreadPoolExecutor(max_workers=10) as pool:
+                readmes = list(pool.map(lambda m: self._github.readme(m["full_name"]), to_fetch))
+            for meta, readme in zip(to_fetch, readmes, strict=True):
+                merged = {**meta, **{"readme": readme}}
+                self._store.put_repo(merged, readme)
+                metas.append(merged)
         return metas
 
     def _render(
         self,
         meta: dict[str, Any],
         semantic: float,
+        lexical: float,
+        relevance: float,
         quality: dict[str, float],
         overall: float,
-        readme: str | None,
+        query: str,
         intent: Intent,
     ) -> dict[str, Any]:
         lic = (
@@ -209,15 +255,34 @@ class Engine:
             if isinstance(meta.get("license"), dict)
             else None
         )
-        evidence = excerpt(readme) if readme else str(meta.get("description") or "")
+        readme = meta.get("readme")
+        lic_info = license_info(lic)
+        snippet = best_snippet(readme, query) if readme else str(meta.get("description") or "")
+        flags: list[str] = []
+        if meta.get("archived"):
+            flags.append("archived")
+        if not lic:
+            flags.append("no-license")
+        if lic_info["category"] == "strong-copyleft" and intent == "adopt":
+            flags.append("strong-copyleft")
+        if lic_info["category"] == "weak-copyleft":
+            flags.append("weak-copyleft")
+        if quality["activity"] < 0.3:
+            flags.append("stale")
+        if not readme:
+            flags.append("no-readme")
+
         if meta.get("archived"):
             recommendation = "avoid (archived)"
-        elif quality["quality"] >= 0.55 and semantic >= 0.4:
+        elif lic_info["category"] == "strong-copyleft" and intent == "adopt":
+            recommendation = "matches but strong-copyleft; review license before adopting"
+        elif quality["quality"] >= 0.55 and relevance >= 0.4:
             recommendation = "strong candidate"
-        elif semantic >= 0.35:
+        elif relevance >= 0.35:
             recommendation = "promising; check activity/license"
         else:
             recommendation = "weak match"
+
         return {
             "rank": 0,
             "full_name": meta["full_name"],
@@ -227,17 +292,23 @@ class Engine:
             "forks": meta.get("forks_count"),
             "language": meta.get("language"),
             "license": lic,
+            "license_category": lic_info["category"],
+            "license_note": lic_info["note"],
             "archived": meta.get("archived"),
             "pushed_at": meta.get("pushed_at"),
             "default_branch": meta.get("default_branch"),
             "has_readme": bool(readme),
+            "as_of": _now_iso(),
+            "flags": flags,
             "semantic": round(semantic, 3),
+            "lexical": round(lexical, 3),
+            "relevance": round(relevance, 3),
             "activity": quality["activity"],
             "license_score": quality["license"],
             "popularity": quality["popularity"],
             "quality": quality["quality"],
             "overall": round(overall, 3),
-            "evidence": evidence[:600],
+            "snippet": snippet[:600],
             "recommendation": recommendation,
             "weights": intent_weights(intent),
         }
