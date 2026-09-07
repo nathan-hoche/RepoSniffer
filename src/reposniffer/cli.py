@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from typing import NoReturn
 
 import typer
@@ -65,7 +66,9 @@ def search(
     finally:
         engine.close()
     if json_out:
-        console.print(json.dumps({"query": query, "intent": intent, "results": results}, indent=2))
+        sys.stdout.write(
+            json.dumps({"query": query, "intent": intent, "results": results}, indent=2) + "\n"
+        )
         return
     table = Table(title=f"RepoSniffer — {query!r} ({intent})")
     for col in ("#", "Repo", "Stars", "Lang", "License", "Activity", "Overall", "Recommendation"):
@@ -100,7 +103,7 @@ def intel(
     finally:
         engine.close()
     if json_out:
-        console.print(json.dumps(result, indent=2))
+        sys.stdout.write(json.dumps(result, indent=2) + "\n")
         return
     console.print(f"[bold]{result['full_name']}[/bold] — {result['status']}")
     console.print(

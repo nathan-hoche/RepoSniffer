@@ -1,10 +1,16 @@
 # RepoSniffer
 
+<p align="center">
+  <img src="docs/icon.png" width="140" alt="RepoSniffer" />
+</p>
+
 [![CI](https://github.com/nathan-hoche/RepoSniffer/actions/workflows/ci.yml/badge.svg)](https://github.com/nathan-hoche/RepoSniffer/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/reposniffer)](https://pypi.org/project/reposniffer/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 > There's a repo for that. Let RepoSniffer find it.
+
+![RepoSniffer demo](docs/demo.gif)
 
 **AI-first GitHub repo discovery.** Describe a feature in plain language —
 "markdown editor with live preview" — and RepoSniffer returns a ranked, adoption-grade
