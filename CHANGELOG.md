@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dependabot for pip + GitHub Actions dependencies.
 - GitHub Releases from tags.
 
+### Changed
+- Default embedding model `BAAI/bge-small-en-v1.5` → `BAAI/bge-base-en-v1.5`
+  (384 → 768 dim). Eval hit@1 0.50 → 0.83; hit@3/hit@5 hold at 0.83.
+- `EMBEDDING_CACHE_VERSION` bumped to invalidate stale embeddings.
+
 ## [0.1.1] - 2026-09-07
 
 ### Fixed

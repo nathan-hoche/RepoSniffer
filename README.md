@@ -78,7 +78,7 @@ Every result carries `as_of` (a freshness timestamp agents can cite), a `flags` 
    index grows over time.
 
 Embeddings are pluggable: default is a zero-config **local** `fastembed` ONNX model
-(no torch, no API key); set `REPOSNIFFER_EMBED_BACKEND=api` plus an OpenAI-compatible
+(`BAAI/bge-base-en-v1.5`, no torch, no API key); set `REPOSNIFFER_EMBED_BACKEND=api` plus an OpenAI-compatible
 endpoint for stronger quality.
 
 ## Eval
@@ -90,7 +90,7 @@ token (each query fetches ~50 READMEs):
 GITHUB_TOKEN=ghp_... uv run python -m eval.run
 ```
 
-Reports hit@1 / hit@3 / hit@5. Current live result: **hit@1 0.50, hit@3 0.83, hit@5 0.83**.
+Reports hit@1 / hit@3 / hit@5. Current live result: **hit@1 0.83, hit@3 0.83, hit@5 0.83**.
 
 Known limitation: the candidate stage depends on GitHub Search API relevance, which can
 fail to recall canonical repos with weak descriptions/READMEs (e.g. `Kozea/WeasyPrint`

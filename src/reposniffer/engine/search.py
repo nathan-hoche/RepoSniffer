@@ -32,7 +32,7 @@ def _now_iso() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
 
-EMBEDDING_CACHE_VERSION = "v3"
+EMBEDDING_CACHE_VERSION = "v4"
 
 
 def _embedding_key(model: str) -> str:
