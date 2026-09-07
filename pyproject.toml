@@ -1,14 +1,15 @@
 [project]
 name = "reposniffer"
-version = "0.1.3"
+version = "0.1.4"
 description = "AI-first GitHub repo discovery: describe a feature, get the best open-source project — for agents (MCP) and humans (CLI)."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "Nathan Hoche" }]
 keywords = ["github", "mcp", "agent", "search", "embeddings", "semantic-search"]
+maintainers = [{ name = "Nathan Hoche" }]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -23,6 +24,13 @@ dependencies = [
     "rich>=13.0.0",
     "pydantic>=2.0.0",
 ]
+
+[project.urls]
+Homepage = "https://nathan-hoche.github.io/RepoSniffer/"
+Documentation = "https://nathan-hoche.github.io/RepoSniffer/"
+Repository = "https://github.com/nathan-hoche/RepoSniffer"
+Issues = "https://github.com/nathan-hoche/RepoSniffer/issues"
+Changelog = "https://github.com/nathan-hoche/RepoSniffer/blob/main/CHANGELOG.md"
 
 [project.scripts]
 reposniffer = "reposniffer.cli:app"

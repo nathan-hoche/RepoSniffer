@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-09-07
+
+### Added
+- `server.json` (MCP registry) + `smithery.yaml` (Smithery) manifests; `site/public/og.png` OG image + Starlight `head` tags for link unfurls.
+- `docs/LAUNCH.md` launch playbook (HN/Reddit/X/mcp registries), `docs/social-preview.png` as site OG image.
+- `.github/FUNDING.yml` (GitHub Sponsors), PyPI `[project.urls]` (Homepage/Docs/Repo/Issues/Changelog), `Downloads` badge and `MCP` badge + star-history chart + "Why not just GitHub Search?" comparison in README.
+- `Development Status :: 3 - Alpha` → `4 - Beta`.
+
+### Fixed
+- Thread-safe `Store` (`check_same_thread=False` + `RLock`) for MCP background warm-up + threadpool callers; offline `scripts/check_mcp.py` + `mcp.yml` CI.
+
 ## [0.1.3] - 2026-09-07
 
 ### Added
@@ -61,7 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Offline test suite; eval harness with hit@1/3/5.
 - CI (lint/format/type/test) + trusted-publishing PyPI publish on `v*` tags.
 
-[Unreleased]: https://github.com/nathan-hoche/RepoSniffer/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/nathan-hoche/RepoSniffer/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/nathan-hoche/RepoSniffer/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/nathan-hoche/RepoSniffer/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/nathan-hoche/RepoSniffer/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/nathan-hoche/RepoSniffer/compare/v0.1.0...v0.1.1

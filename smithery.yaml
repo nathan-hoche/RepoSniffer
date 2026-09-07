@@ -1,0 +1,19 @@
+name: reposniffer
+displayName: RepoSniffer
+description: AI-first GitHub repo discovery for agents — describe a feature, get the best open-source project with quality signals and license verdicts.
+homepage: https://nathan-hoche.github.io/RepoSniffer/
+repository: https://github.com/nathan-hoche/RepoSniffer
+keywords: [github, mcp, semantic-search, embeddings, agent, discovery]
+startCommand:
+  type: stdio
+  command: reposniffer-mcp
+  configSchema:
+    type: object
+    properties:
+      githubToken:
+        type: string
+        description: GitHub token (or set GITHUB_TOKEN). Falls back to gh auth token.
+      defaultNeglect:
+        type: string
+        description: Optional env overrides (REPOSNIFFER_EMBED_MODEL etc.)
+    required: []

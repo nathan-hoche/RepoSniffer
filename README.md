@@ -6,7 +6,9 @@
 
 [![CI](https://github.com/nathan-hoche/RepoSniffer/actions/workflows/ci.yml/badge.svg)](https://github.com/nathan-hoche/RepoSniffer/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/reposniffer)](https://pypi.org/project/reposniffer/)
+[![MCP](https://img.shields.io/badge/MCP-registry-blueviolet)](https://github.com/modelcontextprotocol/registry)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Downloads](https://img.shields.io/pypi/dm/reposniffer)](https://pypi.org/project/reposniffer/)
 
 > There's a repo for that. Let RepoSniffer find it.
 
@@ -64,6 +66,16 @@ Every result carries `as_of` (a freshness timestamp agents can cite), a `flags` 
 (`permissive` / `weak-copyleft` / `strong-copyleft` / `unknown`), and a targeted
 `snippet` showing *why* the repo matched.
 
+## Why not just GitHub Search?
+
+| Need | GitHub Search / grep.app | RepoSniffer |
+| --- | --- | --- |
+| Query | literal keywords (`in:readme markdown preview`) | natural language intent (`markdown editor with live preview`) |
+| Ranking | BM25 / stars only | hybrid cosine + lexical rerank + quality signals |
+| Verdict | you inspect each repo | `license_category`, `flags` (`archived`, `no-license`, `stale`, `strong-copyleft`), evidence `snippet`, `as_of` |
+| Agent-ready | scrape HTML / hallucinate | MCP `find_repos` / `repo_intel` with structured JSON |
+| Cache | none | local SQLite (repos, READMEs, embeddings, queries) |
+
 ## Architecture
 
 1. **Coarse candidate fetch** — GitHub Search API (`in:readme`, language/license/stars filters).
@@ -101,6 +113,10 @@ Known limitation: the candidate stage depends on GitHub Search API relevance, wh
 fail to recall canonical repos with weak descriptions/READMEs (e.g. `Kozea/WeasyPrint`
 — description is just "The awesome document factory"). Semantic rerank can only rank
 what the candidate fetch surfaces.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=nathan-hoche/RepoSniffer&type=Date)](https://star-history.com/#nathan-hoche/RepoSniffer&Date)
 
 ## Project layout
 

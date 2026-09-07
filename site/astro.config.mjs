@@ -11,6 +11,13 @@ export default defineConfig({
         src: "./src/assets/icon.png",
       },
       customCss: ["./src/styles/custom.css"],
+      head: [
+        { tag: "meta", attrs: { property: "og:image", content: "https://nathan-hoche.github.io/RepoSniffer/og.png" } },
+        { tag: "meta", attrs: { property: "og:image:width", content: "1280" } },
+        { tag: "meta", attrs: { property: "og:image:height", content: "640" } },
+        { tag: "meta", attrs: { name: "twitter:card", content: "summary_large_image" } },
+        { tag: "meta", attrs: { name: "twitter:image", content: "https://nathan-hoche.github.io/RepoSniffer/og.png" } },
+      ],
       social: {
         github: "https://github.com/nathan-hoche/RepoSniffer",
       },

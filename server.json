@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.nathan-hoche/reposniffer",
+  "description": "AI-first GitHub repo discovery for agents: describe a feature, get the best open-source project. MCP server + CLI with semantic search, quality signals and license verdicts.",
+  "repository": {
+    "url": "https://github.com/nathan-hoche/RepoSniffer",
+    "source": "github"
+  },
+  "homepage": "https://nathan-hoche.github.io/RepoSniffer/",
+  "version": "0.1.4",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "reposniffer",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
+  "remotes": []
+}
