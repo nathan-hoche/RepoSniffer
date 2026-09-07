@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 from typing import Any
 
 from mcp.server.mcpserver import MCPServer
@@ -11,12 +12,15 @@ from reposniffer.engine.search import build_engine
 mcp = MCPServer("reposniffer")
 
 _engine_singleton: Any | None = None
+_engine_lock = threading.Lock()
 
 
 def _engine() -> Any:
     global _engine_singleton
     if _engine_singleton is None:
-        _engine_singleton = build_engine(Settings())
+        with _engine_lock:
+            if _engine_singleton is None:
+                _engine_singleton = build_engine(Settings())
     return _engine_singleton
 
 
@@ -80,6 +84,7 @@ def health() -> dict[str, Any]:
 
 
 def main() -> None:
+    threading.Thread(target=_engine, daemon=True).start()  # warm up in the background
     asyncio.run(mcp.run_stdio_async())
 
 
