@@ -67,7 +67,16 @@ def search(
         engine.close()
     if json_out:
         sys.stdout.write(
-            json.dumps({"query": query, "intent": intent, "results": results}, indent=2) + "\n"
+            json.dumps(
+                {
+                    "query": query,
+                    "intent": intent,
+                    "as_of": results[0]["as_of"] if results else None,
+                    "results": results,
+                },
+                indent=2,
+            )
+            + "\n"
         )
         return
     table = Table(title=f"RepoSniffer — {query!r} ({intent})")
