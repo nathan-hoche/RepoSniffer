@@ -29,6 +29,16 @@ def _handle_error(exc: GitHubError) -> NoReturn:
     raise typer.Exit(code=1)
 
 
+def _warn_no_token() -> None:
+    if not Settings().github_token:
+        console.print(
+            "[yellow]No GITHUB_TOKEN set — unauthenticated GitHub limits are low "
+            "(60 req/hr) and one query can exhaust them. Create a token at "
+            "https://github.com/settings/tokens and export GITHUB_TOKEN=ghp_... "
+            "for reliable results.[/yellow]"
+        )
+
+
 @app.command()
 def search(
     query: str = typer.Argument(..., help="Plain-language feature description."),
@@ -39,6 +49,7 @@ def search(
     top_k: int = typer.Option(5, "--top-k", min=1, max=20),
     json_out: bool = typer.Option(False, "--json", help="Emit JSON instead of a table."),
 ) -> None:
+    _warn_no_token()
     engine = build_engine(Settings())
     try:
         results = engine.search(
@@ -80,6 +91,7 @@ def intel(
     top_k: int = typer.Option(2, "--top-k"),
     json_out: bool = typer.Option(False, "--json"),
 ) -> None:
+    _warn_no_token()
     engine = build_engine(Settings())
     try:
         result = engine.repo_intel(owner_repo=owner_repo, query=query, top_k=top_k)

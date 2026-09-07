@@ -45,7 +45,7 @@ class Settings:
         default_factory=lambda: float(_env("REPOSNIFFER_TIMEOUT", "20") or "20")
     )
     search_per_page: int = field(
-        default_factory=lambda: int(_env("REPOSNIFFER_SEARCH_PER_PAGE", "25") or "25")
+        default_factory=lambda: int(_env("REPOSNIFFER_SEARCH_PER_PAGE", "50") or "50")
     )
     repo_cache_ttl_hours: float = field(
         default_factory=lambda: float(_env("REPOSNIFFER_REPO_TTL_HOURS", "168") or "168")

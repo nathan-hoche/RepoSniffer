@@ -21,7 +21,7 @@ verifiable "best of kind" answer with reasons.
 uvx reposniffer "markdown editor live preview" --language python --top-k 5
 
 # MCP server (stdio) — wire into opencode, Claude Code, Codex, Cursor, ...
-uvx reposniffer-mcp
+uvx --from reposniffer reposniffer-mcp
 ```
 
 Set `GITHUB_TOKEN` to raise search rate limits (authenticated = 30 req/min vs ~10).
@@ -35,15 +35,15 @@ Set `GITHUB_TOKEN` to raise search rate limits (authenticated = 30 req/min vs ~1
   "mcp": {
     "reposniffer": {
       "type": "local",
-      "command": ["uvx", "reposniffer-mcp"],
+      "command": ["uvx", "--from", "reposniffer", "reposniffer-mcp"],
       "environment": { "GITHUB_TOKEN": "ghp_..." }
     }
   }
 }
 ```
 
-Claude Code: `claude mcp add reposniffer -- uvx reposniffer-mcp`
-Codex/Cursor: add an MCP server pointing at `uvx reposniffer-mcp` (stdio).
+Claude Code: `claude mcp add reposniffer -- uvx --from reposniffer reposniffer-mcp`
+Codex/Cursor: add an MCP server pointing at `uvx --from reposniffer reposniffer-mcp` (stdio).
 
 ## MCP tools
 
@@ -78,13 +78,18 @@ endpoint for stronger quality.
 ## Eval
 
 Ground-truth queries live in `eval/queries.py` (feature → known-good repos). Run with a
-token (each query fetches ~25 READMEs):
+token (each query fetches ~50 READMEs):
 
 ```bash
 GITHUB_TOKEN=ghp_... uv run python -m eval.run
 ```
 
-Reports hit@1 / hit@3 / hit@5. Add cases as the golden set grows.
+Reports hit@1 / hit@3 / hit@5. Current live result: **hit@1 0.50, hit@3 0.83, hit@5 0.83**.
+
+Known limitation: the candidate stage depends on GitHub Search API relevance, which can
+fail to recall canonical repos with weak descriptions/READMEs (e.g. `Kozea/WeasyPrint`
+— description is just "The awesome document factory"). Semantic rerank can only rank
+what the candidate fetch surfaces.
 
 ## Project layout
 

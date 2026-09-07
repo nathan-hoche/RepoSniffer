@@ -76,6 +76,24 @@ class GitHub:
         return resp.text
 
 
+def _filter_suffix(
+    language: str | None,
+    license_key: str | None,
+    min_stars: int | None,
+    include_archived: bool,
+) -> list[str]:
+    tokens: list[str] = []
+    if language:
+        tokens.append(f"language:{language}")
+    if license_key:
+        tokens.append(f"license:{license_key}")
+    if min_stars is not None:
+        tokens.append(f"stars:>={min_stars}")
+    if not include_archived:
+        tokens.append("archived:false")
+    return tokens
+
+
 def build_search_query(
     query: str,
     language: str | None = None,
@@ -86,19 +104,92 @@ def build_search_query(
     tokens: list[str] = []
     q = query.strip()
     if "in:" not in q and "q=" not in q:
-        tokens.append(q)
+        keywords = " ".join(tokenize(q)) or q
+        tokens.append(keywords)
         tokens.append("in:readme")
     else:
         tokens.append(q)
-    if language:
-        tokens.append(f"language:{language}")
-    if license_key:
-        tokens.append(f"license:{license_key}")
-    if min_stars is not None:
-        tokens.append(f"stars:>={min_stars}")
-    if not include_archived:
-        tokens.append("archived:false")
+    tokens.extend(_filter_suffix(language, license_key, min_stars, include_archived))
     return " ".join(tokens)
+
+
+TOPIC_WORDS = {
+    "pdf",
+    "html",
+    "css",
+    "json",
+    "yaml",
+    "xml",
+    "csv",
+    "markdown",
+    "api",
+    "cli",
+    "http",
+    "websocket",
+    "graphql",
+    "rest",
+    "sql",
+    "docker",
+    "kubernetes",
+    "auth",
+    "oauth",
+    "python",
+    "javascript",
+    "typescript",
+    "rust",
+    "go",
+    "java",
+    "editor",
+    "converter",
+    "compiler",
+    "framework",
+    "library",
+    "client",
+    "server",
+    "database",
+    "async",
+    "terminal",
+    "tui",
+    "image",
+    "video",
+    "audio",
+}
+
+
+def build_topic_query(
+    query: str,
+    language: str | None = None,
+    license_key: str | None = None,
+    min_stars: int | None = None,
+    include_archived: bool = False,
+) -> str | None:
+    q = query.strip()
+    if "in:" in q or "q=" in q:
+        return None
+    topics = [w for w in tokenize(q) if w in TOPIC_WORDS]
+    if len(topics) < 2:
+        return None
+    tokens: list[str] = [" ".join(topics)]
+    tokens.extend(f"topic:{t}" for t in topics[:2])
+    tokens.extend(_filter_suffix(language, license_key, min_stars, include_archived))
+    return " ".join(tokens)
+
+
+def is_curated_list(meta: dict[str, Any]) -> bool:
+    name = str(meta.get("name") or "").lower()
+    description = str(meta.get("description") or "").lower()
+    topics = [str(t).lower() for t in (meta.get("topics") or [])]
+    if "awesome" in name or "awesome" in description:
+        return True
+    if "awesome-list" in " ".join(topics):
+        return True
+    if name.startswith("awesome-"):
+        return True
+    return False
+
+
+def filter_curated_lists(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [item for item in items if not is_curated_list(item)]
 
 
 def strip_markdown(text: str) -> str:
@@ -213,7 +304,10 @@ def query_cache_key(
     query: str, language: str | None, license_key: str | None, min_stars: int | None
 ) -> str:
     raw = "|".join([query, language or "", license_key or "", str(min_stars or "")])
-    return hashlib.sha256(raw.encode()).hexdigest()
+    return hashlib.sha256(f"{QUERY_CACHE_VERSION}|{raw}".encode()).hexdigest()
+
+
+QUERY_CACHE_VERSION = "v4"
 
 
 def short_owner_repo(full_name: str) -> str:

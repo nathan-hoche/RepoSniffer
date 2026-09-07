@@ -13,6 +13,8 @@ from reposniffer.engine.github import (
     GitHub,
     best_snippet,
     build_search_query,
+    build_topic_query,
+    filter_curated_lists,
     query_cache_key,
     text_for_embedding,
 )
@@ -28,6 +30,13 @@ from reposniffer.engine.score import (
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
+
+
+EMBEDDING_CACHE_VERSION = "v3"
+
+
+def _embedding_key(model: str) -> str:
+    return f"{model}|{EMBEDDING_CACHE_VERSION}"
 
 
 def build_engine(
@@ -102,7 +111,9 @@ class Engine:
 
         candidates = self._store.get_query(key, self._settings.query_cache_ttl_hours)
         if candidates is None:
-            candidates = self._github.search_repos(gh_query, self._settings.search_per_page)
+            candidates = self._fetch_candidates(
+                gh_query, query, language, license_key, min_stars, include_archived
+            )
             self._store.put_query(key, candidates)
 
         metas = self._finalize_metas(candidates)
@@ -113,7 +124,7 @@ class Engine:
         vectors: dict[str, np.ndarray] = {}
         missing: list[tuple[str, int]] = []
         for i, meta in enumerate(metas):
-            emb = self._store.get_embedding(meta["full_name"], self.model_name)
+            emb = self._store.get_embedding(meta["full_name"], _embedding_key(self.model_name))
             if emb is None:
                 missing.append((meta["full_name"], i))
             else:
@@ -122,7 +133,7 @@ class Engine:
             batch_texts = [embed_texts[idx] for _, idx in missing]
             batch = l2_normalize(self._embedder.embed(batch_texts))
             for (name, _), vec in zip(missing, batch, strict=True):
-                self._store.put_embedding(name, self.model_name, vec)
+                self._store.put_embedding(name, _embedding_key(self.model_name), vec)
                 vectors[name] = vec
 
         results: list[dict[str, Any]] = []
@@ -220,6 +231,27 @@ class Engine:
             "snippet": best_snippet(readme, query_text) if readme else "",
             "alternatives": alternatives,
         }
+
+    def _fetch_candidates(
+        self,
+        gh_query: str,
+        query: str,
+        language: str | None,
+        license_key: str | None,
+        min_stars: int | None,
+        include_archived: bool,
+    ) -> list[dict[str, Any]]:
+        items = filter_curated_lists(
+            self._github.search_repos(gh_query, self._settings.search_per_page)
+        )
+        topic_query = build_topic_query(query, language, license_key, min_stars, include_archived)
+        if topic_query:
+            extra = filter_curated_lists(
+                self._github.search_repos(topic_query, self._settings.search_per_page)
+            )
+            seen = {item["full_name"] for item in items}
+            items.extend(item for item in extra if item["full_name"] not in seen)
+        return items
 
     def _finalize_metas(self, candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
         metas: list[dict[str, Any]] = []
