@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.3] - 2026-09-07
 
+### Added
+- `GITHUB_TOKEN` now falls back to `gh auth token` when the env var is unset,
+  so the tool works out of the box for users with the GitHub CLI authenticated
+  (no more accidental unauthenticated rate-limit exhaustion).
+
 ### Fixed
 - MCP server warms up the engine in a background thread at startup, so the
   first tool call doesn't pay model-load latency (which could exceed client

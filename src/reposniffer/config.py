@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -9,9 +10,26 @@ def _env(name: str, default: str | None = None) -> str | None:
     return os.environ.get(name, default)
 
 
+def _github_token() -> str | None:
+    explicit = os.environ.get("GITHUB_TOKEN")
+    if explicit:
+        return explicit
+    # Fall back to the GitHub CLI's stored token so the tool works out of the
+    # box for users who have `gh` authenticated, without extra setup.
+    try:
+        return (
+            subprocess.run(
+                ["gh", "auth", "token"], capture_output=True, text=True, timeout=5
+            ).stdout.strip()
+            or None
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
 @dataclass(frozen=True)
 class Settings:
-    github_token: str | None = field(default_factory=lambda: _env("GITHUB_TOKEN"))
+    github_token: str | None = field(default_factory=_github_token)
     github_api_base: str = field(
         default_factory=lambda: (
             _env("GITHUB_API_BASE", "https://api.github.com") or "https://api.github.com"
