@@ -1,6 +1,6 @@
 [project]
 name = "reposniffer"
-version = "0.1.1"
+version = "0.1.2"
 description = "AI-first GitHub repo discovery: describe a feature, get the best open-source project — for agents (MCP) and humans (CLI)."
 readme = "README.md"
 requires-python = ">=3.12"
