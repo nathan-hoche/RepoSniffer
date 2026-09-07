@@ -1,0 +1,19 @@
+name: MCP
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  mcp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.14"
+      - name: Install dependencies
+        run: uv sync
+      - name: MCP server integration check (offline)
+        run: uv run python scripts/check_mcp.py

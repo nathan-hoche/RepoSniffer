@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import threading
+import traceback
 from typing import Any
 
 from mcp.server.mcpserver import MCPServer
@@ -20,7 +22,12 @@ def _engine() -> Any:
     if _engine_singleton is None:
         with _engine_lock:
             if _engine_singleton is None:
-                _engine_singleton = build_engine(Settings())
+                if os.environ.get("REPOSNIFFER_FAKE_ENGINE") == "1":
+                    from reposniffer.testing import build_test_engine
+
+                    _engine_singleton = build_test_engine()
+                else:
+                    _engine_singleton = build_engine(Settings())
     return _engine_singleton
 
 
@@ -44,16 +51,20 @@ def find_repos(
         raise ValueError("intent must be 'adopt' or 'study'")
     if not (1 <= top_k <= 20):
         raise ValueError("top_k must be between 1 and 20")
-    engine = _engine()
-    results = engine.search(
-        query=query,
-        language=language,
-        license_key=license,
-        min_stars=min_stars,
-        intent=intent,  # type: ignore[arg-type]
-        top_k=top_k,
-        include_archived=include_archived,
-    )
+    try:
+        engine = _engine()
+        results = engine.search(
+            query=query,
+            language=language,
+            license_key=license,
+            min_stars=min_stars,
+            intent=intent,  # type: ignore[arg-type]
+            top_k=top_k,
+            include_archived=include_archived,
+        )
+    except Exception as exc:
+        traceback.print_exc()
+        return {"error": f"{type(exc).__name__}: {exc}"}
     return {
         "query": query,
         "intent": intent,
@@ -74,7 +85,11 @@ def repo_intel(
 
     Use BEFORE committing to a dependency to catch archived/stale/no-license repos.
     """
-    return _engine().repo_intel(owner_repo=owner_repo, query=query, top_k=top_k)
+    try:
+        return _engine().repo_intel(owner_repo=owner_repo, query=query, top_k=top_k)
+    except Exception as exc:
+        traceback.print_exc()
+        return {"error": f"{type(exc).__name__}: {exc}"}
 
 
 @mcp.tool()
