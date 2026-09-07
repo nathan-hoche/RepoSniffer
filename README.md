@@ -81,6 +81,11 @@ Embeddings are pluggable: default is a zero-config **local** `fastembed` ONNX mo
 (`BAAI/bge-base-en-v1.5`, no torch, no API key); set `REPOSNIFFER_EMBED_BACKEND=api` plus an OpenAI-compatible
 endpoint for stronger quality.
 
+**Model size:** the default `bge-base-en-v1.5` is a one-time ~209 MB download (cached
+in `~/.cache/fastembed`). If you want a smaller footprint, set
+`REPOSNIFFER_EMBED_MODEL=BAAI/bge-small-en-v1.5` (~90 MB) — quality is slightly lower
+(hit@1 0.50 vs 0.83 on the eval), so prefer the larger model when disk isn't a concern.
+
 ## Eval
 
 Ground-truth queries live in `eval/queries.py` (feature → known-good repos). Run with a
