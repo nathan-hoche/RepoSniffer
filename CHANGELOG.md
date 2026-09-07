@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-09-07
+
+### Fixed
+- MCP server warms up the engine in a background thread at startup, so the
+  first tool call doesn't pay model-load latency (which could exceed client
+  MCP call timeouts). Thread-safe singleton.
+
 ## [0.1.2] - 2026-09-07
 
 ### Fixed
@@ -49,7 +56,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Offline test suite; eval harness with hit@1/3/5.
 - CI (lint/format/type/test) + trusted-publishing PyPI publish on `v*` tags.
 
-[Unreleased]: https://github.com/nathan-hoche/RepoSniffer/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/nathan-hoche/RepoSniffer/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/nathan-hoche/RepoSniffer/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/nathan-hoche/RepoSniffer/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/nathan-hoche/RepoSniffer/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/nathan-hoche/RepoSniffer/releases/tag/v0.1.0
